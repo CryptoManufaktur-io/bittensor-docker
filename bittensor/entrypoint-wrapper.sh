@@ -9,20 +9,26 @@ if [ ! -f "${DATA_DIR}/.initialized" ]; then
     # Detect archive format and extract accordingly
     case "${SNAPSHOT}" in
       *.tar.lz4)
-        curl -o - -L "${SNAPSHOT}" | lz4 -c -d - | tar -x -C "${DATA_DIR}"
+        if ! command -v lz4 >/dev/null 2>&1; then
+          echo "entrypoint-wrapper: lz4 not found, cannot extract snapshot"; exit 1
+        fi
+        curl --fail -o - -L "${SNAPSHOT}" | lz4 -c -d - | tar -x -C "${DATA_DIR}"
         ;;
       *.tar.gz|*.tgz)
-        curl -o - -L "${SNAPSHOT}" | tar -xz -C "${DATA_DIR}"
+        curl --fail -o - -L "${SNAPSHOT}" | tar -xz -C "${DATA_DIR}"
         ;;
       *.tar.zst|*.tar.zstd)
-        curl -o - -L "${SNAPSHOT}" | zstd -d | tar -x -C "${DATA_DIR}"
+        if ! command -v zstd >/dev/null 2>&1; then
+          echo "entrypoint-wrapper: zstd not found, cannot extract snapshot"; exit 1
+        fi
+        curl --fail -o - -L "${SNAPSHOT}" | zstd -d | tar -x -C "${DATA_DIR}"
         ;;
       *.tar)
-        curl -o - -L "${SNAPSHOT}" | tar -x -C "${DATA_DIR}"
+        curl --fail -o - -L "${SNAPSHOT}" | tar -x -C "${DATA_DIR}"
         ;;
       *)
         echo "entrypoint-wrapper: unknown snapshot format, attempting tar.gz"
-        curl -o - -L "${SNAPSHOT}" | tar -xz -C "${DATA_DIR}"
+        curl --fail -o - -L "${SNAPSHOT}" | tar -xz -C "${DATA_DIR}"
         ;;
     esac
     echo "entrypoint-wrapper: snapshot restore complete"

@@ -17,8 +17,8 @@ cp default.env .env
 
 - Docker Engine 23+ with Compose V2
 - 4+ CPU cores
-- 40+ GB RAM
-- 6 TB SSD/NVMe (current usage ~3.3 TB, growing ~300 GB/month)
+- 16+ GB RAM (40 GB recommended)
+- 6 TB SSD/NVMe recommended (current usage ~3.3 TB, growing ~300 GB/month)
 - ~3 weeks for initial archive sync
 
 ## Configuration
@@ -28,12 +28,17 @@ Key variables in `.env`:
 | Variable | Default | Description |
 |---|---|---|
 | `SUBTENSOR_DOCKER_TAG` | `latest` | Subtensor image tag |
-| `NETWORK` | `finney` | `finney` (mainnet) or `test_finney` (testnet) |
+| `NETWORK` | `finney` | Metrics label only; chain spec is set in compose |
 | `PRUNING` | `archive` | `archive` for full history, `256` for pruned |
 | `RPC_PORT` | `9944` | Primary RPC port (HTTP + WebSocket) |
 | `P2P_PORT` | `30333` | P2P networking port |
+| `SNAPSHOT` | _(empty)_ | Snapshot URL for initial sync (`.tar.lz4`, `.tar.gz`, `.tar.zst`, `.tar`) |
 | `EXTRA_FLAGS` | _(empty)_ | Additional flags for the subtensor binary |
 | `LOG_LEVEL` | `info` | `info`, `debug`, `warn`, `error`, `trace` |
+| `DOMAIN` | `example.com` | Domain for Traefik reverse proxy |
+| `RPC_HOST` | `subtensor` | Hostname for RPC Traefik router |
+| `WS_HOST` | `subtensorws` | Hostname for WebSocket Traefik router |
+| `DOCKER_EXT_NETWORK` | `traefik_default` | External Docker network for Traefik |
 
 ### Compose File Overlays
 
@@ -47,6 +52,12 @@ COMPOSE_FILE=bittensor.yml:ext-network.yml
 # Both
 COMPOSE_FILE=bittensor.yml:rpc-shared.yml:ext-network.yml
 ```
+
+### Snapshot Restore
+
+Set `SNAPSHOT` in `.env` to a URL before first start. Supported formats:
+`.tar.lz4`, `.tar.gz`, `.tar.zst`, `.tar`. The snapshot is downloaded and
+extracted on first run only (tracked by `/data/.initialized` sentinel).
 
 ## Commands
 
@@ -77,10 +88,13 @@ Add `:ext-network.yml` to `COMPOSE_FILE` in `.env` and configure `DOMAIN`,
 
 ## Notes
 
-Bittensor is a Substrate blockchain. EVM calls only work on blocks after
-the EVM pallets were activated (~Oct 2025). See the
-[Substrate JSON-RPC spec](https://polkadot.js.org/docs/substrate/rpc) for
-available RPC methods.
+- Bittensor is a Substrate blockchain. EVM calls only work on blocks after
+  the EVM pallets were activated (~Oct 2025).
+- The `NETWORK` variable only sets metrics labels. The chain spec is
+  hardcoded to finney (mainnet) in `bittensor.yml`. To run testnet, override
+  `--chain` and `--bootnodes` via `EXTRA_FLAGS`.
+- Prometheus metrics are exposed on port 9615 inside the container
+  (`--prometheus-external`).
 
 ## Links
 

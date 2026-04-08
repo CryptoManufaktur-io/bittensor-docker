@@ -4,4 +4,3 @@ services:
   subtensor:
     ports:
       - 127.0.0.1:${RPC_PORT:-9944}:9944
-      - 127.0.0.1:${RPC_HTTP_PORT:-9933}:9933
