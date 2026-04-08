@@ -140,8 +140,8 @@ install_tools_in_container() {
       exit 0
     fi
     if command -v apt-get >/dev/null 2>&1; then
-      apt-get update -y >/dev/null
-      apt-get install -y curl jq ca-certificates >/dev/null
+      DEBIAN_FRONTEND=noninteractive apt-get update -y >/dev/null
+      DEBIAN_FRONTEND=noninteractive apt-get install -y curl jq ca-certificates >/dev/null
     elif command -v apk >/dev/null 2>&1; then
       apk add --no-cache curl jq ca-certificates >/dev/null
     else

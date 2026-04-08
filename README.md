@@ -23,11 +23,12 @@ cp default.env .env
 
 ## Configuration
 
-Key variables in `.env`:
+Key variables in `.env` (see `default.env` for full reference):
 
 | Variable | Default | Description |
 |---|---|---|
-| `SUBTENSOR_DOCKER_TAG` | `latest` | Subtensor image tag |
+| `SUBTENSOR_DOCKER_REPO` | `ghcr.io/opentensor/subtensor` | Subtensor image repository |
+| `SUBTENSOR_DOCKER_TAG` | `v3.3.13-393` | Subtensor image tag |
 | `NETWORK` | `finney` | Metrics label only; chain spec is set in compose |
 | `PRUNING` | `archive` | `archive` for full history, `256` for pruned |
 | `RPC_PORT` | `9944` | Primary RPC port (HTTP + WebSocket) |
