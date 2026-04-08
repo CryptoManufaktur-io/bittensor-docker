@@ -1,0 +1,7 @@
+# Add :rpc-shared.yml to COMPOSE_FILE in .env to expose RPC ports locally.
+# Ports are bound to 127.0.0.1 by default for security.
+services:
+  subtensor:
+    ports:
+      - 127.0.0.1:${RPC_PORT:-9944}:9944
+      - 127.0.0.1:${RPC_HTTP_PORT:-9933}:9933

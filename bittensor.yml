@@ -1,0 +1,69 @@
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "3"
+      tag: '{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}'
+
+services:
+  subtensor:
+    image: ${SUBTENSOR_DOCKER_REPO}:${SUBTENSOR_DOCKER_TAG}
+    container_name: ${PROJECT_NAME}-subtensor
+    restart: unless-stopped
+    stop_grace_period: 5m
+    entrypoint:
+      - /usr/local/bin/entrypoint-wrapper.sh
+    volumes:
+      - subtensor-data:/data
+      - ./bittensor/entrypoint-wrapper.sh:/usr/local/bin/entrypoint-wrapper.sh:ro
+    environment:
+      - SNAPSHOT=${SNAPSHOT:-}
+      - EXTRA_FLAGS=${EXTRA_FLAGS:-}
+    ports:
+      - ${P2P_PORT:-30333}:30333/tcp
+    <<: *logging
+    command:
+      - --base-path=/data
+      - --chain=./chainspecs/raw_spec_finney.json
+      - --rpc-external
+      - --rpc-cors=all
+      - --no-mdns
+      - --bootnodes=/dns/bootnode.finney.chain.opentensor.ai/tcp/30333/ws/p2p/12D3KooWRwbMb85RWnT8DSXSYMWQtuDwh4LJzndoRrTDotTR5gDC
+      - --pruning=${PRUNING:-archive}
+      - --rpc-port=9944
+      - --log=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"system_health\",\"params\":[],\"id\":1}' http://localhost:9944 | grep -q '\"result\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${RPC_HOST:-subtensor}.service=${RPC_HOST:-subtensor}
+      - traefik.http.routers.${RPC_HOST:-subtensor}.entrypoints=websecure
+      - traefik.http.routers.${RPC_HOST:-subtensor}.rule=Host(`${RPC_HOST:-subtensor}.${DOMAIN}`)
+      - traefik.http.routers.${RPC_HOST:-subtensor}.tls.certresolver=letsencrypt
+      - traefik.http.routers.${RPC_HOST:-subtensor}lb.service=${RPC_HOST:-subtensor}
+      - traefik.http.routers.${RPC_HOST:-subtensor}lb.entrypoints=websecure
+      - traefik.http.routers.${RPC_HOST:-subtensor}lb.rule=Host(`${RPC_LB:-subtensor-lb}.${DOMAIN}`)
+      - traefik.http.routers.${RPC_HOST:-subtensor}lb.tls.certresolver=letsencrypt
+      - traefik.http.services.${RPC_HOST:-subtensor}.loadbalancer.server.port=9944
+      - traefik.http.routers.${WS_HOST:-subtensorws}.service=${WS_HOST:-subtensorws}
+      - traefik.http.routers.${WS_HOST:-subtensorws}.entrypoints=websecure
+      - traefik.http.routers.${WS_HOST:-subtensorws}.rule=Host(`${WS_HOST:-subtensorws}.${DOMAIN}`)
+      - traefik.http.routers.${WS_HOST:-subtensorws}.tls.certresolver=letsencrypt
+      - traefik.http.routers.${WS_HOST:-subtensorws}lb.service=${WS_HOST:-subtensorws}
+      - traefik.http.routers.${WS_HOST:-subtensorws}lb.entrypoints=websecure
+      - traefik.http.routers.${WS_HOST:-subtensorws}lb.rule=Host(`${WS_LB:-subtensorws-lb}.${DOMAIN}`)
+      - traefik.http.routers.${WS_HOST:-subtensorws}lb.tls.certresolver=letsencrypt
+      - traefik.http.services.${WS_HOST:-subtensorws}.loadbalancer.server.port=9944
+      - metrics.scrape=true
+      - metrics.path=/metrics
+      - metrics.port=9615
+      - metrics.instance=subtensor
+      - metrics.network=${NETWORK:-finney}
+
+volumes:
+  subtensor-data:
