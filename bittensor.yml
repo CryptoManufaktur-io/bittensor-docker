@@ -35,7 +35,13 @@ services:
       - --log=${LOG_LEVEL:-info}
       - --prometheus-external
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"system_health\",\"params\":[],\"id\":1}' http://localhost:9944 | grep -q '\"result\"'"]
+      test:
+        - CMD-SHELL
+        - >-
+          curl -sf -X POST
+          -H 'Content-Type: application/json'
+          -d '{"jsonrpc":"2.0","method":"system_health","params":[],"id":1}'
+          http://localhost:9944 | grep -q '"result"'
       interval: 30s
       timeout: 10s
       retries: 3
